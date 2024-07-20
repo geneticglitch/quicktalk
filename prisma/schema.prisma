@@ -7,8 +7,16 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserType {
+  LOCAL
+  GOOGLE
+}
+
 model User {
-  id    String  @id @default(cuid())
-  email String  @unique
-  name  String?
+  id            String        @id @default(cuid())
+  name          String       
+  email         String        @unique
+  password      String?       
+  image         String        @default("/default.jpg")
+  type          UserType      
 }
