@@ -15,6 +15,7 @@ enum UserType {
 model User {
   id            String        @id @default(cuid())
   name          String       
+  display_name  String        @unique
   email         String        @unique
   password      String?       
   image         String        @default("/default.jpg")

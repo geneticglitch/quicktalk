@@ -28,29 +28,31 @@ export async function authenticate_user(email: string, password: string) {
 
 export const handle_google_login = async (account: any, profile: any) => {
   try {
-    // Check if the user exists in the database
     const existingUser = await prisma.user.findUnique({
       where: { email: profile.email as string },
     });
 
     if (!existingUser) {
-      // Add the Google user to the database
-      await prisma.user.create({
+      const newUser = await prisma.user.create({
         data: {
           id: account.providerAccountId,
           name: profile.name,
+          display_name: account.providerAccountId,
           email: profile.email,
           type: 'GOOGLE',
         },
       });
-    } else if (existingUser.type !== 'GOOGLE') {
-      // Handle the case where a local user with the same email exists
+      return { id: newUser.id, name: newUser.name, email: newUser.email, display_name: newUser.display_name };
+    } 
+
+    if (existingUser.type !== 'GOOGLE') {
       console.error("A local user with the same email already exists.");
       return false;
     }
-    return true;
+
+    return { id: existingUser.id, name: existingUser.name, email: existingUser.email, display_name: existingUser.display_name };
   } catch (error) {
-    console.error("An error occurred:", error);
+    console.error("Google login error:", error);
     return false;
   }
 };
