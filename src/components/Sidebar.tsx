@@ -2,7 +2,7 @@
 import React, { use, useState, useRef } from 'react';
 import Modal from "@/components/Modal";
 import { useSession } from 'next-auth/react';
-import { search_friend_SF } from '@/lib/server_actions/AddFriends';
+import { search_friend_SF , add_friend_SF} from '@/lib/server_actions/AddFriends';
 
 export default function Sidebar() {
 
@@ -27,15 +27,17 @@ export default function Sidebar() {
     display_name: string;
     image: string;
   }
-
+  
   const [searchState, setSearchState] = useState<{
-    results: search_result[];
+    result: search_result | null;
     error: string | null;
     loading: boolean;
+    friendRequestSent: boolean;
   }>({
-    results: [],
+    result: null,
     error: null,
-    loading: false
+    loading: false,
+    friendRequestSent: false
   });
 
 
@@ -46,31 +48,51 @@ export default function Sidebar() {
     const searchTerm = add_friend_username_input_field.current?.value.trim();
 
     if(!searchTerm) {
-      setSearchState({ results: [], error: "Please enter a username", loading: false });
+      setSearchState({ result: null, error: "Please enter a username", loading: false, friendRequestSent: false });
       return;
     }
 
     if(!userId) {
-      setSearchState({ results: [], error: "Please login to search for friends", loading: false });
+      setSearchState({ result: null, error: "Please login to search for friends", loading: false, friendRequestSent: false });
       return;
     }
 
-    setSearchState({ results: [], error: null, loading: true });
+    setSearchState({ result: null, error: null, loading: true, friendRequestSent: false });
 
     try {
-      const results = await search_friend_SF(searchTerm, userId);
+      const result = await search_friend_SF(searchTerm, userId);
       setSearchState({ 
-        results, 
-        error: results.length === 0 ? "No users found matching that username" : null, 
-        loading: false 
+        result: result !== null ? result[0] : null, 
+        error: result === null ? "No user found with that username" : null, 
+        loading: false,
+        friendRequestSent: false
       });
     } catch (error) {
       console.error('Error searching for friend:', error);
-      setSearchState({ results: [], error: "An error occurred while searching", loading: false });
+      setSearchState({ result: null, error: "An error occurred while searching", loading: false, friendRequestSent: false });
     }
   };
-
-
+  const add_friend = async () => {
+    if(!userId || !searchState.result) {
+      return;
+    }
+    
+    try {
+      const response = await add_friend_SF(userId, searchState.result.id);
+      if (response.success) {
+        setSearchState(prevState => ({
+          ...prevState,
+          friendRequestSent: true,
+          error: null
+        }));
+      } else {
+        setSearchState(prevState => ({ ...prevState, error: response.message }));
+      }
+    } catch (error) {
+      console.error('Error adding friend:', error);
+      setSearchState(prevState => ({ ...prevState, error: "An error occurred while adding friend" }));
+    }
+  }
   return (
     <aside className="w-64 bg-gray-800 p-2">
       <nav>
@@ -102,17 +124,17 @@ export default function Sidebar() {
         isOpen={isADDModalOpen} 
         onClose={() => {
           setIsADDModalOpen(false);
-          setSearchState({ results: [], error: null, loading: false });
+          setSearchState({ result: null, error: null, loading: false, friendRequestSent: false });
         }}
         width="400px"
-        height="300px"
+        height="220px"
       >
-        <h2 className="text-xl mb-4">Add Friends</h2>
+        <h2 className="text-xl mb-4">Add Friend</h2>
         <form onSubmit={search_friend} className="grid grid-cols-3 space-x-2">
           <input 
             className="col-span-2 text-lg border rounded-lg text-black py-1 px-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             ref={add_friend_username_input_field}
-            placeholder="Search username..."
+            placeholder="Enter username"
           />
           <button className="bg-blue-700 rounded-lg col-start-3 text-white" type="submit" disabled={searchState.loading}>
             {searchState.loading ? 'Searching...' : 'Search'}
@@ -123,17 +145,19 @@ export default function Sidebar() {
           <p className="text-red-500 mt-2">{searchState.error}</p>
         )}
 
-        {searchState.results.length > 0 && (
-          <div className="mt-4 max-h-40 overflow-y-auto">
-            {searchState.results.map(result => (
-              <div key={result.id} className="mb-4 flex items-center">
-                <img src={result.image} alt={`${result.display_name}'s avatar`} className="w-10 h-10 rounded-full mr-2" />
-                <span className="flex-grow">{result.display_name}</span>
-                <button className="ml-2 bg-green-500 text-white px-2 py-1.5 rounded-lg text-lg">
-                  Add Friend
-                </button>
-              </div>
-            ))}
+        {searchState.result && (
+          <div className="mt-4 flex items-center">
+            <img src={searchState.result.image} alt={`${searchState.result.display_name}'s avatar`} className="w-10 h-10 rounded-full mr-2" />
+            <span className="flex-grow">{searchState.result.display_name}</span>
+            <button 
+              className={`ml-2 px-2 py-1.5 rounded-lg text-lg ${
+                searchState.friendRequestSent ? 'bg-gray-500' : 'bg-green-500'
+              } text-white`}
+              onClick={add_friend}
+              disabled={searchState.friendRequestSent}
+            >
+              {searchState.friendRequestSent ? 'Request Sent' : 'Add Friend'}
+            </button>
           </div>
         )}
       </Modal>
