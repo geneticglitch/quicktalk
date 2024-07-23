@@ -1,8 +1,16 @@
 "use client";
-import React, { useState } from 'react';
+import React, { use, useState, useRef } from 'react';
 import Modal from "@/components/Modal";
+import { useSession } from 'next-auth/react';
+import { search_friend_SF } from '@/lib/server_actions/AddFriends';
 
 export default function Sidebar() {
+
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
+  
+
+  // State to manage the modal
   const [isFRModalOpen, setIsFRModalOpen] = useState(false);
 
   const openFRModal = () => setIsFRModalOpen(true);
@@ -12,8 +20,59 @@ export default function Sidebar() {
 
   const openADDModal = () => setIsADDModalOpen(true);
   const closeADDModal = () => setIsADDModalOpen(false);
+
+  // Add_Friend Modal
+  interface search_result {
+    id: string;
+    display_name: string;
+    image: string;
+  }
+
+  const [searchState, setSearchState] = useState<{
+    results: search_result[];
+    error: string | null;
+    loading: boolean;
+  }>({
+    results: [],
+    error: null,
+    loading: false
+  });
+
+
+  const add_friend_username_input_field = useRef<HTMLInputElement>(null);
+
+  const search_friend = async (e: any) => {
+    e.preventDefault();
+    const searchTerm = add_friend_username_input_field.current?.value.trim();
+
+    if(!searchTerm) {
+      setSearchState({ results: [], error: "Please enter a username", loading: false });
+      return;
+    }
+
+    if(!userId) {
+      setSearchState({ results: [], error: "Please login to search for friends", loading: false });
+      return;
+    }
+
+    setSearchState({ results: [], error: null, loading: true });
+
+    try {
+      const results = await search_friend_SF(searchTerm, userId);
+      setSearchState({ 
+        results, 
+        error: results.length === 0 ? "No users found matching that username" : null, 
+        loading: false 
+      });
+    } catch (error) {
+      console.error('Error searching for friend:', error);
+      setSearchState({ results: [], error: "An error occurred while searching", loading: false });
+    }
+  };
+
+
   return (
-    <aside className="w-64 bg-gray-800  p-4">
+    <aside className="w-64 bg-gray-800 p-2">
       <nav>
         <ul className="p-2">
           <li className="w-full">
@@ -40,6 +99,46 @@ export default function Sidebar() {
          
         </ul>
         <Modal 
+        isOpen={isADDModalOpen} 
+        onClose={() => {
+          setIsADDModalOpen(false);
+          setSearchState({ results: [], error: null, loading: false });
+        }}
+        width="400px"
+        height="300px"
+      >
+        <h2 className="text-xl mb-4">Add Friends</h2>
+        <form onSubmit={search_friend} className="grid grid-cols-3 space-x-2">
+          <input 
+            className="col-span-2 text-lg border rounded-lg text-black py-1 px-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            ref={add_friend_username_input_field}
+            placeholder="Search username..."
+          />
+          <button className="bg-blue-700 rounded-lg col-start-3 text-white" type="submit" disabled={searchState.loading}>
+            {searchState.loading ? 'Searching...' : 'Search'}
+          </button>
+        </form>
+        
+        {searchState.error && (
+          <p className="text-red-500 mt-2">{searchState.error}</p>
+        )}
+
+        {searchState.results.length > 0 && (
+          <div className="mt-4 max-h-40 overflow-y-auto">
+            {searchState.results.map(result => (
+              <div key={result.id} className="mb-4 flex items-center">
+                <img src={result.image} alt={`${result.display_name}'s avatar`} className="w-10 h-10 rounded-full mr-2" />
+                <span className="flex-grow">{result.display_name}</span>
+                <button className="ml-2 bg-green-500 text-white px-2 py-1.5 rounded-lg text-lg">
+                  Add Friend
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </Modal>
+
+        <Modal 
         isOpen={isFRModalOpen} 
         onClose={closeFRModal}
         width="400px"
@@ -48,15 +147,7 @@ export default function Sidebar() {
         <h2 className="text-xl mb-4">Friend Requets</h2>
         <p>This is the content of your center modal.</p>
       </Modal>
-      <Modal 
-        isOpen={isADDModalOpen} 
-        onClose={closeADDModal}
-        width="400px"
-        height="300px"
-      >
-        <h2 className="text-xl mb-4">Add Friends</h2>
-        <p>This is the content of your center modal.</p>
-      </Modal>
+      
       </nav>
     </aside>
   );
