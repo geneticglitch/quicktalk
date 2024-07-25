@@ -1,18 +1,18 @@
 "use client";
 import Image from "next/image";
 import React, { useState, useRef, useEffect } from "react";
-import Modal from "@/components/Modal";
-import { useChatContext } from "@/components/chat_context";
+import Modal from "../components/Modal";
+import { useChatContext } from "../components/chat_context";
 import { useSession } from "next-auth/react";
 import {
   search_friend_SF,
   add_friend_SF,
-} from "@/lib/server_actions/AddFriends";
+} from "../lib/server_actions/AddFriends";
 import {
   get_friend_requests_SF,
   accept_decline_friend_request_SF,
   get_friends_SF,
-} from "@/lib/server_actions/FriendRequests";
+} from "../lib/server_actions/FriendRequests";
 
 export default function Sidebar() {
   const { data: session } = useSession();

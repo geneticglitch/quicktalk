@@ -1,8 +1,5 @@
 "use server"
-import  prisma  from '@/lib/prisma';
-import { send } from 'process';
-
-
+import  prisma  from '../prisma';
 
 const get_friend_requests_SF = async (current_user_id: string) => {
     const friend_requests = await prisma.friendRequest.findMany({

@@ -3,7 +3,7 @@ import NextAuth, { NextAuthOptions } from "next-auth"
 import { DefaultSession } from "next-auth"
 import Google from "next-auth/providers/google"
 import Credentials from "next-auth/providers/credentials"
-import { authenticate_user, handle_google_login } from "@/app/api/auth/[...nextauth]/server_actions"
+import { authenticate_user, handle_google_login } from "./server_actions"
 
 declare module "next-auth" {
   interface Session {
@@ -93,6 +93,7 @@ export const authOptions: NextAuthOptions = {
     signIn: '/auth/signin',
   },
 };
+
 
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };

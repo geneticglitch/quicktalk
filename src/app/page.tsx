@@ -1,8 +1,8 @@
 // page.tsx
-import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
-import Chat from "@/components/Chat";
-import { ChatProvider } from "@/components/chat_context";
+import Navbar from "../components/Navbar";
+import Sidebar from "../components/Sidebar";
+import Chat from "../components/Chat";
+import { ChatProvider } from "../components/chat_context";
 
 export default function Page() {
   return (

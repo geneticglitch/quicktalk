@@ -1,6 +1,6 @@
 "use server"
 import bcrypt from 'bcrypt';
-import prisma from '@/lib/prisma';
+import prisma from '../../../../lib/prisma';
 
 export async function authenticate_user(email: string, password: string) {
   const user = await prisma.user.findUnique({
