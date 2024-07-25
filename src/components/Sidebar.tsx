@@ -1,7 +1,8 @@
 "use client";
 import Image from "next/image";
-import React, { use, useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Modal from "@/components/Modal";
+import { useChatContext } from "@/components/chat_context";
 import { useSession } from "next-auth/react";
 import {
   search_friend_SF,
@@ -261,6 +262,11 @@ export default function Sidebar() {
 
     fetchFriends();
   }, [userId]);
+  //hanldle friend select using react context
+  const { setSelectedFriend } = useChatContext();
+  const handle_frient_select = (friend: friend) => {
+    setSelectedFriend(friend);
+  };
 
   return (
     <aside className="w-64 bg-gray-800 p-2">
@@ -273,7 +279,7 @@ export default function Sidebar() {
               placeholder="Search..."
             />
           </li>
-          <li className="w-full  justify-between border-2 border-green-500 mt-2 rounded-lg text-white bg-green-800 py-1">
+          <li className="w-full  justify-between hover:bg-green-600  mt-2 rounded-lg text-white bg-green-700 py-1.5">
             <button
               onClick={openADDModal}
               className="w-full flex flex-row justify-between text-lg px-1.5"
@@ -281,7 +287,7 @@ export default function Sidebar() {
               Add Friends
             </button>
           </li>
-          <li className="w-full  justify-between border-2 border-blue-500 mt-2 rounded-lg text-white bg-blue-800 py-1">
+          <li className="w-full  justify-between hover:bg-blue-600 mt-2 rounded-lg text-white bg-blue-700 py-1.5">
             <button
               onClick={openFRModal}
               className="w-full flex flex-row justify-between text-lg px-1.5"
@@ -295,7 +301,6 @@ export default function Sidebar() {
           </li>
           <br></br>
 
-
           {friends.loading ? (
             <p>Loading...</p>
           ) : friends.error ? (
@@ -305,17 +310,22 @@ export default function Sidebar() {
           ) : (
             friends.friends?.map((friend) => (
               <li key={friend.id} className="w-full mt-2">
-                <button id={friend.id} className="flex items-center grid-cols-2 w-full rounded-lg text-white bg-slate-700 hover:bg-slate-500 py-1.5">
-                    <img
-                      className="w-8 h-8 rounded-full ml-1.5"
-                      src={friend.image}
-                    ></img>
-                    <h1 className="pl-3 text-xl overflow-hidden">{friend.display_name}</h1>
+                <button
+                  id={friend.id}
+                  onClick={() => handle_frient_select(friend)}
+                  className="flex items-center grid-cols-2 w-full rounded-lg text-white bg-slate-700 hover:bg-slate-500 py-1.5"
+                >
+                  <img
+                    className="w-8 h-8 rounded-full ml-1.5"
+                    src={friend.image}
+                  ></img>
+                  <h1 className="px-2 text-xl overflow-hidden mr-4">
+                    {friend.display_name}
+                  </h1>
                 </button>
               </li>
             ))
           )}
-
         </ul>
         <Modal
           isOpen={isADDModalOpen}
@@ -397,7 +407,7 @@ export default function Sidebar() {
                   <div className="col-span-2 flex items-center">
                     <Image
                       src={request.image}
-                      alt = "avatar"
+                      alt="avatar"
                       className="mr-2 rounded-full"
                       width={35}
                       height={35}
