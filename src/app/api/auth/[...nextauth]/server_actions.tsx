@@ -31,7 +31,6 @@ export const handle_google_login = async (account: any, profile: any) => {
     const existingUser = await prisma.user.findUnique({
       where: { email: profile.email as string },
     });
-
     if (!existingUser) {
       const newUser = await prisma.user.create({
         data: {
@@ -39,10 +38,11 @@ export const handle_google_login = async (account: any, profile: any) => {
           name: profile.name,
           display_name: account.providerAccountId,
           email: profile.email,
+          image: profile.picture,
           type: 'GOOGLE',
         },
       });
-      return { id: newUser.id, name: newUser.name, email: newUser.email, display_name: newUser.display_name };
+      return { id: newUser.id, name: newUser.name, email: newUser.email, display_name: newUser.display_name, image: newUser.image };
     } 
 
     if (existingUser.type !== 'GOOGLE') {

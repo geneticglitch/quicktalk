@@ -19,20 +19,21 @@ enum FriendRequestStatus {
 }
 
 model User {
-  id                String        @id @default(cuid())
-  name              String       
-  display_name      String        @unique
-  email             String        @unique
-  password          String?       
-  image             String        @default("/default.jpg")
-  type              UserType      
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-
-  sentFriendRequests     FriendRequest[] @relation("Sender")
-  receivedFriendRequests FriendRequest[] @relation("Receiver")
-  sentMessages           Message[]       @relation("Sender")
-  groupMemberships       GroupMember[]
+  id                      String        @id @default(cuid())
+  name                    String       
+  display_name            String        @unique
+  email                   String        @unique
+  password                String?       
+  image                   String        @default("/default.jpg")
+  type                    UserType      
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+  sentFriendRequests      FriendRequest[] @relation("Sender")
+  receivedFriendRequests  FriendRequest[] @relation("Receiver")
+  sentMessages            Message[]     @relation("Sender")
+  groupMemberships        GroupMember[]
+  friends                 Friend[]      @relation("UserFriends")
+  friendsOf               Friend[]      @relation("FriendOfUser")
 }
 
 model FriendRequest {
@@ -42,11 +43,21 @@ model FriendRequest {
   status     FriendRequestStatus
   createdAt  DateTime           @default(now())
   updatedAt  DateTime           @updatedAt
-
-  sender   User @relation("Sender", fields: [senderId], references: [id])
-  receiver User @relation("Receiver", fields: [receiverId], references: [id])
+  sender     User               @relation("Sender", fields: [senderId], references: [id])
+  receiver   User               @relation("Receiver", fields: [receiverId], references: [id])
 
   @@unique([senderId, receiverId])
+}
+
+model Friend {
+  id        String   @id @default(cuid())
+  userId    String
+  friendId  String
+  friendAt  DateTime @default(now())
+  user      User     @relation("UserFriends", fields: [userId], references: [id])
+  friend    User     @relation("FriendOfUser", fields: [friendId], references: [id])
+
+  @@unique([userId, friendId])
 }
 
 model Group {
@@ -55,9 +66,8 @@ model Group {
   description String?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
-
-  members  GroupMember[]
-  messages Message[]
+  members     GroupMember[]
+  messages    Message[]
 }
 
 model GroupMember {
@@ -67,9 +77,8 @@ model GroupMember {
   isAdmin   Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  user  User  @relation(fields: [userId], references: [id])
-  group Group @relation(fields: [groupId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  group     Group    @relation(fields: [groupId], references: [id])
 
   @@unique([userId, groupId])
 }
@@ -81,7 +90,6 @@ model Message {
   groupId   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  sender User  @relation("Sender", fields: [senderId], references: [id])
-  group  Group? @relation(fields: [groupId], references: [id])
+  sender    User     @relation("Sender", fields: [senderId], references: [id])
+  group     Group?   @relation(fields: [groupId], references: [id])
 }

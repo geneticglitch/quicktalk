@@ -99,7 +99,7 @@ export default function Sidebar() {
     id: string;
     display_name: string;
     image: string;
-
+    senderId: string;
   }
 
   const [friendRequests, setFriendRequests] = useState<{
@@ -133,12 +133,14 @@ export default function Sidebar() {
 
     fetchFriendRequests();
   }
-  , [isFRModalOpen]);
+  , [userId,isFRModalOpen]);
 
   const button_action_FR = async (e: any) => {
     const button = e.currentTarget;
     const friend_request_id = button.id;
+    const sender_id = button.name;
     const action = e.currentTarget.textContent;
+
     if (!userId) {
       return;
     }
@@ -149,7 +151,7 @@ export default function Sidebar() {
     }
   
     try {
-      await accept_decline_friend_request_SF(friend_request_id, action);
+      await accept_decline_friend_request_SF(userId,sender_id,friend_request_id, action);
       
       setFriendRequests(prevState => ({
         ...prevState,
@@ -256,8 +258,8 @@ export default function Sidebar() {
                 <span className = "">{request.display_name}</span>
                 </div>
                 <div className="col-start-3 flex space-x-2">
-                  <button id={request.id} onClick = {button_action_FR} className="bg-green-500 text-white px-2 py-1 rounded-lg">Accept</button>
-                  <button id={request.id} onClick = {button_action_FR} className="bg-red-500 text-white px-2 py-1 rounded-lg">Decline</button>
+                  <button id={request.id} name={request.senderId} onClick = {button_action_FR} className="bg-green-500 text-white px-2 py-1 rounded-lg">Accept</button>
+                  <button id={request.id} name={request.senderId} onClick = {button_action_FR} className="bg-red-500 text-white px-2 py-1 rounded-lg">Decline</button>
                 </div>
               </li>
             ))}
