@@ -3,7 +3,7 @@ import React, { use, useState, useRef, useEffect } from 'react';
 import Modal from "@/components/Modal";
 import { useSession } from 'next-auth/react';
 import { search_friend_SF , add_friend_SF} from '@/lib/server_actions/AddFriends';
-import { get_friend_requests_SF } from '@/lib/server_actions/FriendRequests';
+import { get_friend_requests_SF ,accept_decline_friend_request_SF } from '@/lib/server_actions/FriendRequests';
 
 export default function Sidebar() {
 
@@ -99,16 +99,19 @@ export default function Sidebar() {
     id: string;
     display_name: string;
     image: string;
+
   }
 
   const [friendRequests, setFriendRequests] = useState<{
     friendRequests: friend_request[] | null;
     error : string | null;
     loading: boolean;
+    noofrequests: number;
   }>({
       friendRequests: [],
       error: null,
-      loading: false
+      loading: false,
+      noofrequests: 0
     });
 
   useEffect(() => {
@@ -118,10 +121,10 @@ export default function Sidebar() {
 
     const fetchFriendRequests = async () => {
       setFriendRequests(prevState => ({ ...prevState, loading: true }));
-
+      
       try {
         const friendRequests = await get_friend_requests_SF(userId) as friend_request[];
-        setFriendRequests({ friendRequests : friendRequests , error: null, loading: false });
+        setFriendRequests({ friendRequests : friendRequests , error: null, loading: false, noofrequests: friendRequests.length });
       } catch (error) {
         console.error('Error fetching friend requests:', error);
         setFriendRequests(prevState => ({ ...prevState, error: "An error occurred while fetching friend requests", loading: false }));
@@ -132,7 +135,36 @@ export default function Sidebar() {
   }
   , [isFRModalOpen]);
 
-
+  const button_action_FR = async (e: any) => {
+    const button = e.currentTarget;
+    const friend_request_id = button.id;
+    const action = e.currentTarget.textContent;
+    if (!userId) {
+      return;
+    }
+    
+    // Fix the condition here
+    if (action !== 'Accept' && action !== 'Decline') {
+      return;
+    }
+  
+    try {
+      await accept_decline_friend_request_SF(friend_request_id, action);
+      
+      setFriendRequests(prevState => ({
+        ...prevState,
+        friendRequests: prevState.friendRequests 
+          ? prevState.friendRequests.filter(request => request.id !== friend_request_id)
+          : [],
+        error: null,
+        loading: false,
+        noofrequests: prevState.noofrequests - 1
+      }));
+    } catch (error) {
+      console.error('Error accepting/declining friend request:', error);
+    }
+  };
+    
   return (
     <aside className="w-64 bg-gray-800 p-2">
       <nav>
@@ -153,7 +185,7 @@ export default function Sidebar() {
             <button  onClick={openFRModal} className="w-full flex flex-row justify-between text-lg px-1.5">
                 {/* TODO add logos/icons and a notifications */}
                 Friend Requests
-                <h1 className=" rounded-full px-2.5 bg-red-500 border border-red-800">2</h1>
+                <h1 className=" rounded-full px-2.5 bg-red-500 border border-red-800">{friendRequests.noofrequests}</h1>
             
             </button>
             
@@ -224,8 +256,8 @@ export default function Sidebar() {
                 <span className = "">{request.display_name}</span>
                 </div>
                 <div className="col-start-3 flex space-x-2">
-                  <button className="bg-green-500 text-white px-2 py-1 rounded-lg">Accept</button>
-                  <button className="bg-red-500 text-white px-2 py-1 rounded-lg">Decline</button>
+                  <button id={request.id} onClick = {button_action_FR} className="bg-green-500 text-white px-2 py-1 rounded-lg">Accept</button>
+                  <button id={request.id} onClick = {button_action_FR} className="bg-red-500 text-white px-2 py-1 rounded-lg">Decline</button>
                 </div>
               </li>
             ))}

@@ -35,7 +35,7 @@ const add_friend_SF = async (current_user_id: string, friend_id: string) => {
         });
 
         if (existingRequest) {
-            if (existingRequest.status === 'PENDING') {
+            if (existingRequest.status === 'PENDING') { 
                 return { success: false, message: "A friend request already exists" };
             } else if (existingRequest.status === 'ACCEPTED') {
                 return { success: false, message: "You are already friends" };
