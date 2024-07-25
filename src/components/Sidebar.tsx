@@ -1,8 +1,9 @@
 "use client";
-import React, { use, useState, useRef } from 'react';
+import React, { use, useState, useRef, useEffect } from 'react';
 import Modal from "@/components/Modal";
 import { useSession } from 'next-auth/react';
 import { search_friend_SF , add_friend_SF} from '@/lib/server_actions/AddFriends';
+import { get_friend_requests_SF } from '@/lib/server_actions/FriendRequests';
 
 export default function Sidebar() {
 
@@ -39,7 +40,6 @@ export default function Sidebar() {
     loading: false,
     friendRequestSent: false
   });
-
 
   const add_friend_username_input_field = useRef<HTMLInputElement>(null);
 
@@ -93,6 +93,46 @@ export default function Sidebar() {
       setSearchState(prevState => ({ ...prevState, error: "An error occurred while adding friend" }));
     }
   }
+
+  // Friend Request Modal
+  interface friend_request {
+    id: string;
+    display_name: string;
+    image: string;
+  }
+
+  const [friendRequests, setFriendRequests] = useState<{
+    friendRequests: friend_request[] | null;
+    error : string | null;
+    loading: boolean;
+  }>({
+      friendRequests: [],
+      error: null,
+      loading: false
+    });
+
+  useEffect(() => {
+    if(!userId) {
+      return;
+    }
+
+    const fetchFriendRequests = async () => {
+      setFriendRequests(prevState => ({ ...prevState, loading: true }));
+
+      try {
+        const friendRequests = await get_friend_requests_SF(userId) as friend_request[];
+        setFriendRequests({ friendRequests : friendRequests , error: null, loading: false });
+      } catch (error) {
+        console.error('Error fetching friend requests:', error);
+        setFriendRequests(prevState => ({ ...prevState, error: "An error occurred while fetching friend requests", loading: false }));
+      }
+    };
+
+    fetchFriendRequests();
+  }
+  , [isFRModalOpen]);
+
+
   return (
     <aside className="w-64 bg-gray-800 p-2">
       <nav>
@@ -165,11 +205,32 @@ export default function Sidebar() {
         <Modal 
         isOpen={isFRModalOpen} 
         onClose={closeFRModal}
-        width="400px"
+        width="500px"
         height="300px"
       >
         <h2 className="text-xl mb-4">Friend Requets</h2>
-        <p>This is the content of your center modal.</p>
+        {friendRequests.loading ? (
+          <p>Loading...</p>
+        ) : friendRequests.error ? (
+          <p className="text-red-500">{friendRequests.error}</p>
+        ) : friendRequests.friendRequests?.length === 0 ? (
+          <p>No friend requests</p>
+        ) : (
+          <ul>
+            {friendRequests.friendRequests?.map((request) => (
+              <li key={request.id} className="grid grid-cols-3 space-x-2 mt-2">
+                <div className ="col-span-2 flex items-center">
+                <img src={request.image} alt={`${request.display_name}'s avatar`} className="w-10 h-10 rounded-full" />
+                <span className = "">{request.display_name}</span>
+                </div>
+                <div className="col-start-3 flex space-x-2">
+                  <button className="bg-green-500 text-white px-2 py-1 rounded-lg">Accept</button>
+                  <button className="bg-red-500 text-white px-2 py-1 rounded-lg">Decline</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </Modal>
       
       </nav>
