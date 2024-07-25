@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import React, { use, useState, useRef, useEffect } from "react";
 import Modal from "@/components/Modal";
 import { useSession } from "next-auth/react";
@@ -9,6 +10,7 @@ import {
 import {
   get_friend_requests_SF,
   accept_decline_friend_request_SF,
+  get_friends_SF,
 } from "@/lib/server_actions/FriendRequests";
 
 export default function Sidebar() {
@@ -232,6 +234,33 @@ export default function Sidebar() {
     loading: false,
   });
 
+  useEffect(() => {
+    if (!userId) {
+      return;
+    }
+
+    const fetchFriends = async () => {
+      setFriends((prevState) => ({ ...prevState, loading: true }));
+
+      try {
+        const friends = (await get_friends_SF(userId)) as friend[];
+        setFriends({
+          friends: friends,
+          error: null,
+          loading: false,
+        });
+      } catch (error) {
+        console.error("Error fetching friends:", error);
+        setFriends((prevState) => ({
+          ...prevState,
+          error: "An error occurred while fetching friends",
+          loading: false,
+        }));
+      }
+    };
+
+    fetchFriends();
+  }, [userId]);
 
   return (
     <aside className="w-64 bg-gray-800 p-2">
@@ -264,6 +293,29 @@ export default function Sidebar() {
               </h1>
             </button>
           </li>
+          <br></br>
+
+
+          {friends.loading ? (
+            <p>Loading...</p>
+          ) : friends.error ? (
+            <p className="text-red-500">{friends.error}</p>
+          ) : friends.friends?.length === 0 ? (
+            <p>No friends</p>
+          ) : (
+            friends.friends?.map((friend) => (
+              <li key={friend.id} className="w-full mt-2">
+                <button id={friend.id} className="flex items-center grid-cols-2 w-full rounded-lg text-white bg-slate-700 hover:bg-slate-500 py-1.5">
+                    <img
+                      className="w-8 h-8 rounded-full ml-1.5"
+                      src={friend.image}
+                    ></img>
+                    <h1 className="pl-3 text-xl overflow-hidden">{friend.display_name}</h1>
+                </button>
+              </li>
+            ))
+          )}
+
         </ul>
         <Modal
           isOpen={isADDModalOpen}
@@ -343,11 +395,13 @@ export default function Sidebar() {
                   className="grid grid-cols-3 space-x-2 mt-2"
                 >
                   <div className="col-span-2 flex items-center">
-                    <img
+                    <Image
                       src={request.image}
-                      alt={`${request.display_name}'s avatar`}
-                      className="w-10 h-10 rounded-full"
-                    />
+                      alt = "avatar"
+                      className="mr-2 rounded-full"
+                      width={35}
+                      height={35}
+                    ></Image>
                     <span className="">{request.display_name}</span>
                   </div>
                   <div className="col-start-3 flex space-x-2">

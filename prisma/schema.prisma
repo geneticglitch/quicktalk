@@ -86,6 +86,7 @@ model GroupMember {
 model Message {
   id        String   @id @default(cuid())
   content   String
+  seen      Boolean  @default(false)
   senderId  String
   groupId   String?
   createdAt DateTime @default(now())

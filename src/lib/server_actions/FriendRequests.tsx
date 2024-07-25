@@ -90,4 +90,37 @@ const accept_decline_friend_request_SF = async (current_user_id:string, sender_u
     }
 }
 
-export { get_friend_requests_SF , accept_decline_friend_request_SF };
+const get_friends_SF = async (current_user_id: string) => {
+    const friends = await prisma.friend.findMany({
+        where: {
+            userId: current_user_id
+        },
+        select: {
+            friendId: true
+        }
+    });
+    if(friends.length === 0) {
+        return [];
+    }
+    let friends_data = [];
+    for (let i = 0; i < friends.length; i++) {
+        const friend = friends[i];
+        const user = await prisma.user.findUnique({
+            where: {
+                id: friend.friendId
+            },
+            select: {
+                display_name: true,
+                image: true
+            }
+        });
+        friends_data.push({
+            id: friend.friendId,
+            display_name: user?.display_name,
+            image: user?.image
+        });
+    }  
+    return friends_data;
+}
+
+export { get_friend_requests_SF , accept_decline_friend_request_SF , get_friends_SF };
