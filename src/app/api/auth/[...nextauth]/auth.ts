@@ -1,4 +1,3 @@
-import { User } from "next-auth";
 import NextAuth, { NextAuthOptions } from "next-auth"
 import { DefaultSession } from "next-auth"
 import Google from "next-auth/providers/google"
@@ -64,7 +63,6 @@ export const authOptions: NextAuthOptions = {
           user.email = google_user.email;
           user.display_name = google_user.display_name;
           user.image = google_user.image;
-          console.log(user);
           return true;
         }
         return false; 
