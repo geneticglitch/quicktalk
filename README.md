@@ -1,4 +1,4 @@
-# ChatSphere: Real-time Messaging with Next.js and Socket.IO
+# ChatSphere(QuickTalk): Real-time Messaging with Next.js and Socket.IO
 
 ChatSphere is a modern, real-time messaging application built with Next.js and Socket.IO. It features a custom server configuration that integrates Next.js for server-side rendering and API routes with Socket.IO for real-time communication.
 
